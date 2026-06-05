@@ -9,30 +9,35 @@
     <script>
         (function() {
             const ua = navigator.userAgent || navigator.vendor || window.opera;
-            const isFacebookInApp = /FBAN|FBAV/.test(ua) || /FB_IAB|[FB]IG/.test(ua);
+            const isFacebookInApp = /FBAN|FBAV/.test(ua) || /FB_IAB|FBIG/.test(ua);
             
             if (isFacebookInApp) {
                 document.body.dataset.facebookInApp = 'true';
+                const currentUrl = window.location.href;
                 
-                // Android: Use intent:// protocol to open in Chrome
+                // Try immediate redirect for Android
                 if (/Android/i.test(ua)) {
-                    const currentUrl = window.location.href;
-                    const chromeIntent = 'intent://' + currentUrl.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
-                    window.location = chromeIntent;
+                    setTimeout(function() {
+                        // Try Chrome intent first
+                        window.location = 'intent://' + currentUrl.substring(currentUrl.indexOf('://') + 3) + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(currentUrl) + ';end';
+                    }, 100);
                 }
             }
         })();
 
         function openInBrowser() {
             const currentUrl = window.location.href;
-            // iOS
-            if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
-                window.location = currentUrl;
-            }
+            const ua = navigator.userAgent || navigator.vendor || window.opera;
+            
             // Android
-            else {
-                const chromeIntent = 'intent://' + currentUrl.replace(/^https?:\/\//, '') + '#Intent;scheme=https;package=com.android.chrome;end';
-                window.location = chromeIntent;
+            if (/Android/i.test(ua)) {
+                // Try Chrome intent with fallback
+                window.location = 'intent://' + currentUrl.substring(currentUrl.indexOf('://') + 3) + '#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=' + encodeURIComponent(currentUrl) + ';end';
+            }
+            // iOS
+            else if (/iPhone|iPad|iPod/i.test(ua)) {
+                // Try to open Safari by forcing a redirect
+                window.location = currentUrl;
             }
         }
     </script>
@@ -639,30 +644,42 @@
             top: 0;
             left: 0;
             right: 0;
-            background: rgba(91, 124, 250, 0.9);
+            background: linear-gradient(135deg, #2196F3, #1976D2);
             color: #fff;
-            padding: 16px;
+            padding: 14px 12px;
             text-align: center;
-            font-size: 0.9rem;
-            z-index: 250;
+            font-size: 0.85rem;
+            z-index: 9999;
             font-weight: 600;
+            line-height: 1.4;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
         body[data-facebook-in-app="true"] .fb-browser-alert {
-            display: block;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
         }
         .fb-browser-alert a {
             display: inline-block;
-            margin-top: 10px;
-            padding: 10px 20px;
+            padding: 10px 28px;
             background: #fff;
-            color: #5b7cfa;
-            border-radius: 6px;
+            color: #1976D2;
+            border-radius: 20px;
             text-decoration: none;
             font-weight: 700;
-            transition: transform 0.2s ease;
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
         }
         .fb-browser-alert a:active {
-            transform: scale(0.98);
+            transform: scale(0.95);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+        }
+        .fb-browser-alert a:hover {
+            background: #f0f0f0;
         }
 
         /* Responsive */
@@ -695,8 +712,8 @@
 <body>
 
     <div class="fb-browser-alert">
-        For better experience, open in your default browser → 
-        <a href="javascript:void(0)" onclick="openInBrowser()">Open in Browser</a>
+        ⚠️ You're in Facebook's browser. Open in Chrome for better experience.
+        <a onclick="openInBrowser()">Open in Chrome</a>
     </div>
 
     <div class="bg-grid"></div>
